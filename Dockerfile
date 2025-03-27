@@ -26,6 +26,19 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all Python files
 COPY *.py .
 
+# Create a simple health check script
+RUN echo 'from http.server import HTTPServer, BaseHTTPRequestHandler\n\
+class HealthCheckHandler(BaseHTTPRequestHandler):\n\
+    def do_GET(self):\n\
+        self.send_response(200)\n\
+        self.end_headers()\n\
+        self.wfile.write(b"OK")\n\
+\n\
+def run_health_check():\n\
+    server = HTTPServer(("0.0.0.0", 8000), HealthCheckHandler)\n\
+    server.serve_forever()\n\
+' > health_check.py
+
 # Debug: List all files in the working directory
 RUN echo "Files in /app:" && ls -la /app
 
@@ -36,5 +49,8 @@ RUN useradd -m -u 1000 botuser && \
 # Switch to non-root user
 USER botuser
 
-# Command to run the bot
-CMD ["python", "bot.py"] 
+# Expose the health check port
+EXPOSE 8000
+
+# Start both the health check server and the bot
+CMD ["sh", "-c", "python health_check.py & python bot.py"] 
