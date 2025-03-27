@@ -1,10 +1,10 @@
 # Use the official Python image as the base
 FROM python:3.9-slim
 
-# Set the working directory in the container (root directory)
-WORKDIR /
+# Create and set the working directory in the container
+WORKDIR /app
 
-# Copy all files from the current directory (where the Dockerfile is located) to the container's root directory
+# Copy all files from the current directory (where the Dockerfile is located) to /app in the container
 COPY . .
 
 # Install Python dependencies from requirements.txt
