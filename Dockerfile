@@ -23,8 +23,8 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all application files
-COPY . .
+# Copy all Python files
+COPY *.py .
 
 # Debug: List all files in the working directory
 RUN echo "Files in /app:" && ls -la /app
@@ -35,9 +35,6 @@ RUN useradd -m -u 1000 botuser && \
 
 # Switch to non-root user
 USER botuser
-
-# Debug: Verify bot.py exists and is readable
-RUN ls -l bot.py
 
 # Command to run the bot
 CMD ["python", "bot.py"] 
