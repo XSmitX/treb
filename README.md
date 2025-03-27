@@ -13,15 +13,24 @@ A Telegram bot that processes TeraBox links and provides instant streaming acces
 
 ## Deployment
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/yourusername/tereb)
-[![Deploy on Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=yourusername/tereb&branch=main&name=terabox-bot)
+### Deploy on Heroku
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/XSmitX/treb)
+
+### Deploy on Koyeb
+[![Deploy on Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=XSmitX/treb&branch=main&name=terabox-bot)
+
+### Deploy on Railway
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/XSmitX/treb)
+
+### Deploy on Render
+[![Deploy on Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=XSmitX/treb)
 
 ## Setup
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/tereb.git
-cd tereb
+git clone https://github.com/XSmitX/treb.git
+cd treb
 ```
 
 2. Install dependencies:
@@ -81,7 +90,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-For support, join our [Telegram Channel](https://t.me/your_channel) or create an issue in the repository.
+For support, join our [Telegram Channel](https://t.me/+kkUnhFtiQpA5ZGFl) or create an issue in the repository.
 
 ## Credits
 
