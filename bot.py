@@ -6,7 +6,6 @@ from pyrogram.enums import ChatMemberStatus
 from datetime import datetime
 import asyncio
 
-# Load environment variables from .env file
 
 # Bot configuration
 BOT_TOKEN = "7829127559:AAHcTGVvYRgMRXca3Uo6k3Ox-uMMDpdmgw0"
