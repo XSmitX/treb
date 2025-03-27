@@ -17,11 +17,8 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the bot files into the container
+# Copy only the bot.py file into the container
 COPY bot.py .
-COPY utils.py .
-COPY database_helper.py .
-COPY config.py .
 
 # Create a non-root user for better security
 RUN useradd -m -u 1000 botuser && \
