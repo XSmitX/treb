@@ -50,7 +50,7 @@ RUN useradd -m -u 1000 botuser && \
 USER botuser
 
 # Expose the health check port
-EXPOSE 8000
+EXPOSE 8080
 
 # Start both the health check server and the bot
-CMD ["sh", "-c", "python health_check.py & python bot.py"] 
+CMD ["sh", "-c", "python bot.py"] 
