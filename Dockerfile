@@ -26,6 +26,21 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all Python files
 COPY *.py .
 
+# Create a startup script
+RUN echo '#!/bin/sh\n\
+\n\
+# Start the health check server\n\
+python health_check.py &\n\
+\n\
+# Start the bot with retry logic\n\
+while true; do\n\
+    echo "Starting bot..."\n\
+    python bot.py\n\
+    echo "Bot exited with code $?. Restarting in 5 seconds..."\n\
+    sleep 5\n\
+done\n\
+' > start.sh && chmod +x start.sh
+
 # Create a simple health check script
 RUN echo 'import socket\n\
 import threading\n\
@@ -33,9 +48,9 @@ import time\n\
 \n\
 def tcp_health_check():\n\
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n\
-    server.bind(("0.0.0.0", 8000))\n\
+    server.bind(("0.0.0.0", 8080))\n\
     server.listen(1)\n\
-    print("TCP Health check server listening on port 8000")\n\
+    print("TCP Health check server listening on port 8080")\n\
     while True:\n\
         try:\n\
             client, addr = server.accept()\n\
@@ -67,5 +82,5 @@ USER botuser
 # Expose the health check port
 EXPOSE 8080
 
-# Start both the health check server and the bot
-CMD ["sh", "-c", "python health_check.py & python bot.py"] 
+# Start the application using the startup script
+CMD ["./start.sh"] 
