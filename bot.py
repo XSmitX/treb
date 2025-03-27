@@ -2,32 +2,75 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup as ikm, InlineKeyboardButton as ikb, WebAppInfo
 import pymongo
 from pyrogram.enums import ChatMemberStatus
-import config
+
 from datetime import datetime
 import asyncio
 
-# Validate configuration before starting
-if not config.validate_config():
-    import sys
-    sys.exit(1)
+# Load environment variables from .env file
+
+# Bot configuration
+BOT_TOKEN = "7829127559:AAHcTGVvYRgMRXca3Uo6k3Ox-uMMDpdmgw0"
+API_ID = 1712043
+API_HASH = "965c994b615e2644670ea106fd31daaf"
+
+# MongoDB configuration
+MONGODB_URI = "mongodb+srv://smit:smit@cluster0.pjccvjk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+# Admin configuration
+ADMIN_IDS = [6121699672,5675220252,5545790759]
+DEFAULT_CHANNEL_ID = -1002478587806  # Your permanent channel ID
+LOGS_CHANNEL_ID = -1002532688002  # Channel for logging
 
 # Stickers for bot responses
-stickers = [
-    'CAACAgQAAxkBAAEWpZpn5Ga_FS36Uc8kSiuAc_6LmQGDugACqgsAAsDqEFDQ3jt1DpvhoDYE'
-]
+STICKERS = {
+    'welcome': 'CAACAgQAAxkBAAEWpZpn5Ga_FS36Uc8kSiuAc_6LmQGDugACqgsAAsDqEFDQ3jt1DpvhoDYE',
+    'processing': 'CAACAgUAAxkBAAEV_8RnkPiFEzAKWVUgzWeNcLTOWjsBkAACpwgAAtu6GFQ4oUoIL-_BgzYE'
+}
+
+# Validate required configuration
+def validate_config():
+    """Validate that all required configuration variables are set."""
+    missing = []
+    
+    if not BOT_TOKEN:
+        missing.append("BOT_TOKEN")
+    if not API_ID:
+        missing.append("API_ID")
+    if not API_HASH:
+        missing.append("API_HASH")
+    if not MONGODB_URI:
+        missing.append("MONGODB_URI")
+    if not ADMIN_IDS:
+        missing.append("ADMIN_IDS")
+    if not DEFAULT_CHANNEL_ID:
+        missing.append("DEFAULT_CHANNEL_ID")
+    if not LOGS_CHANNEL_ID:
+        missing.append("LOGS_CHANNEL_ID")
+    
+    if missing:
+        print(f"Error: Missing required configuration: {', '.join(missing)}")
+        print("Please check your configuration")
+        return False
+    
+    return True
+
+# Validate configuration before starting
+if not validate_config():
+    import sys
+    sys.exit(1)
 
 # Initialize the bot
 bot = Client(
     "terabox_bottt",
-    bot_token=config.BOT_TOKEN,
-    api_id=config.API_ID,
-    api_hash=config.API_HASH
+    bot_token=BOT_TOKEN,
+    api_id=API_ID,
+    api_hash=API_HASH
 )
 
 # Configuration
-admin_id = config.ADMIN_IDS
-default_channel_id = config.DEFAULT_CHANNEL_ID
-logs_channel_id = config.LOGS_CHANNEL_ID
+admin_id = ADMIN_IDS
+default_channel_id = DEFAULT_CHANNEL_ID
+logs_channel_id = LOGS_CHANNEL_ID
 
 # Global variables
 under_maintainance = False
@@ -35,7 +78,7 @@ broadcast_on = False
 current_channel_id = default_channel_id
 
 # Connect to MongoDB
-client = pymongo.MongoClient(config.MONGODB_URI)
+client = pymongo.MongoClient(MONGODB_URI)
 db = client['terabox_aditya_singh']
 users_collection = db['users']
 channels_collection = db['channels']  # New collection for channel management
@@ -162,41 +205,69 @@ def check_joined():
 
     return filters.create(func)
 
+# URL Processing Functions
+def process_terabox_url(url):
+    """Process TeraBox URL and extract ID"""
+    try:
+        if '/s/' in url:
+            # For URLs with /s/ pattern
+            surl = url.split('/s/')[1].split('?')[0].split('#')[0]
+        elif 'surl=' in url:
+            # For URLs with surl parameter
+            surl = url.split('surl=')[1].split('&')[0].split('?')[0].split('#')[0]
+        elif 'id=' in url:
+            # For URLs with id parameter
+            surl = url.split('id=')[1].split('&')[0].split('?')[0].split('#')[0]
+        else:
+            # Get the last part of the URL
+            surl = url.split('/')[-1].split('?')[0].split('#')[0]
+        
+        return surl
+    except Exception as e:
+        print(f"Error processing URL: {e}")
+        return None
 
-def url_create(user_input):
-    """Create a TeraBox embedded URL from user input"""
-    t1 = user_input.split('/')[-1]
-    if t1[0].isdigit():
-        t1 = t1[1:]
-    t2 = f'https://www.1024terabox.com/sharing/embed?autoplay=true&resolution=1080&mute=false&surl={t1}' 
-    return t2
+def create_streaming_url(surl):
+    """Create streaming URL from TeraBox ID"""
+    return f"https://muddy-flower-20ec.arjunavai273.workers.dev/?id={surl}"
 
-# Function to create the mini app URL with the user's terabox link
-def create_mini_app_url(user_link):
-    """Create a URL for the Mini App with the user's TeraBox link"""
-    # Base URL for the mini app
-    base_url = "https://muddy-flower-20ec.arjunavai273.workers.dev/?id="
-    # Combine with user's link
-    return f"{base_url}{user_link}"
-
-# Store user information in MongoDB
+# Database Functions
 def store_user_info(user_id, username, first_name):
-    """Store user information in the database if they don't exist"""
-    # Check if the user already exists
+    """Store user information in the database"""
     if not users_collection.find_one({"user_id": user_id}):
         user_data = {
             "user_id": user_id,
             "username": username,
             "first_name": first_name
         }
-        # Insert user data into MongoDB
         users_collection.insert_one(user_data)
 
-# Fetch all users from the database
 async def fetch_all_users():
     """Fetch all user IDs from the database"""
     users = users_collection.find()
     return [user['user_id'] for user in users]
+
+def update_force_sub_channel(channel_id, channel_title, channel_username=None, invite_link=None):
+    """Update force subscription channel in database"""
+    channels_collection.update_one(
+        {"type": "force_sub"},
+        {
+            "$set": {
+                "channel_id": channel_id,
+                "is_default": False,
+                "last_updated": datetime.now(),
+                "channel_title": channel_title,
+                "channel_username": channel_username,
+                "is_private": not bool(channel_username),
+                "invite_link": invite_link
+            }
+        },
+        upsert=True
+    )
+
+def get_force_sub_channel():
+    """Get current force subscription channel"""
+    return channels_collection.find_one({"type": "force_sub"})
 
 # Users command handler (admin only)
 @bot.on_message(filters.command("users"))
@@ -284,7 +355,7 @@ async def start(client, message):
         store_user_info(user_id, username, first_name)
         
         # Send welcome sticker
-        await message.reply_sticker("CAACAgQAAxkBAAEWpZpn5Ga_FS36Uc8kSiuAc_6LmQGDugACqgsAAsDqEFDQ3jt1DpvhoDYE")
+        await message.reply_sticker(STICKERS['welcome'])
         
         # Get channel info
         channel = await client.get_chat(current_channel_id)
@@ -451,21 +522,7 @@ async def add_channel(client, message):
                     return
             
             # Update MongoDB with new channel
-            channels_collection.update_one(
-                {"type": "force_sub"},
-                {
-                    "$set": {
-                        "channel_id": chat.id,
-                        "is_default": False,
-                        "last_updated": datetime.now(),
-                        "channel_title": chat.title,
-                        "channel_username": chat.username,
-                        "is_private": not bool(chat.username),
-                        "invite_link": invite_link
-                    }
-                },
-                upsert=True
-            )
+            update_force_sub_channel(chat.id, chat.title, chat.username, invite_link)
             
             # Success message
             success_text = f"**✅ Force subscription updated successfully!\n\n📢 Channel: {chat.title}\n"
@@ -516,17 +573,7 @@ async def revert_channel(client, message):
         current_channel_id = default_channel_id
         
         # Update MongoDB to revert to default channel
-        channels_collection.update_one(
-            {"type": "force_sub"},
-            {
-                "$set": {
-                    "channel_id": default_channel_id,
-                    "is_default": True,
-                    "last_updated": datetime.now()
-                }
-            },
-            upsert=True
-        )
+        update_force_sub_channel(default_channel_id, "Default Channel", None, None)
         
         # Get channel info
         chat = await client.get_chat(default_channel_id)
@@ -616,7 +663,7 @@ async def process_link(bot, message):
     
     # Get user information
     user_id = message.from_user.id
-    sticker = 'CAACAgUAAxkBAAEV_8RnkPiFEzAKWVUgzWeNcLTOWjsBkAACpwgAAtu6GFQ4oUoIL-_BgzYE'
+    sticker = STICKERS['processing']
     w1 = await message.reply_sticker(sticker)
     username = message.from_user.username
     first_name = message.from_user.first_name
@@ -630,50 +677,43 @@ async def process_link(bot, message):
     if msg.startswith('https://'):
         try:
             # Extract ID from URL - try different patterns
-            if '/s/' in msg:
-                # For URLs with /s/ pattern
-                surl = msg.split('/s/')[1].split('?')[0].split('#')[0]
-            elif 'surl=' in msg:
-                # For URLs with surl parameter
-                surl = msg.split('surl=')[1].split('&')[0].split('?')[0].split('#')[0]
-            elif 'id=' in msg:
-                # For URLs with id parameter
-                surl = msg.split('id=')[1].split('&')[0].split('?')[0].split('#')[0]
-            else:
-                # Get the last part of the URL
-                surl = msg.split('/')[-1].split('?')[0].split('#')[0]
+            surl = process_terabox_url(msg)
             
-            # Create the streaming URL
-            streaming_url = f"https://muddy-flower-20ec.arjunavai273.workers.dev/?id={surl}"
-            
-            print(f"Processing URL: {msg}")
-            print(f"Extracted ID: {surl}")
-            print(f"Streaming URL: {streaming_url}")
-            
-            # Create Mini App button
-            keyboard = ikm([
-                [ikb(
-                    text="🎬 Open Streaming Player",
-                    web_app=WebAppInfo(url=streaming_url)
-                )]
-            ])
-            
-            await w1.delete()
-            await message.reply_text(
-                "**🎯 Link Processed Successfully!\n"
-                "🎬 Click Below to Start Streaming ⬇️**",
-                reply_markup=keyboard,
-                reply_to_message_id=message.id
-            )
-            
-            # Log to admin channel
-            try:
-                await bot.send_message(logs_channel_id, 
-                    f"**👤 User: {message.from_user.first_name}\n"
-                    f"🔗 Accessed: `{surl}`**"
+            if surl:
+                # Create the streaming URL
+                streaming_url = create_streaming_url(surl)
+                
+                print(f"Processing URL: {msg}")
+                print(f"Extracted ID: {surl}")
+                print(f"Streaming URL: {streaming_url}")
+                
+                # Create Mini App button
+                keyboard = ikm([
+                    [ikb(
+                        text="🎬 Open Streaming Player",
+                        web_app=WebAppInfo(url=streaming_url)
+                    )]
+                ])
+                
+                await w1.delete()
+                await message.reply_text(
+                    "**🎯 Link Processed Successfully!\n"
+                    "🎬 Click Below to Start Streaming ⬇️**",
+                    reply_markup=keyboard,
+                    reply_to_message_id=message.id
                 )
-            except Exception:
-                pass
+                
+                # Log to admin channel
+                try:
+                    await bot.send_message(logs_channel_id, 
+                        f"**👤 User: {message.from_user.first_name}\n"
+                        f"🔗 Accessed: `{surl}`**"
+                    )
+                except Exception:
+                    pass
+            else:
+                await w1.delete()
+                await message.reply_text('**❌ Invalid Link!\n📝 Please send a valid TeraBox link**')
         except Exception as e:
             print(f"Error processing link: {e}")
             await w1.delete()
