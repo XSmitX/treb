@@ -27,16 +27,31 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY *.py .
 
 # Create a simple health check script
-RUN echo 'from http.server import HTTPServer, BaseHTTPRequestHandler\n\
-class HealthCheckHandler(BaseHTTPRequestHandler):\n\
-    def do_GET(self):\n\
-        self.send_response(200)\n\
-        self.end_headers()\n\
-        self.wfile.write(b"OK")\n\
+RUN echo 'import socket\n\
+import threading\n\
+import time\n\
 \n\
-def run_health_check():\n\
-    server = HTTPServer(("0.0.0.0", 8000), HealthCheckHandler)\n\
-    server.serve_forever()\n\
+def tcp_health_check():\n\
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n\
+    server.bind(("0.0.0.0", 8000))\n\
+    server.listen(1)\n\
+    print("TCP Health check server listening on port 8000")\n\
+    while True:\n\
+        try:\n\
+            client, addr = server.accept()\n\
+            client.close()\n\
+        except Exception as e:\n\
+            print(f"Health check error: {e}")\n\
+\n\
+def start_health_check():\n\
+    health_thread = threading.Thread(target=tcp_health_check, daemon=True)\n\
+    health_thread.start()\n\
+    print("Health check thread started")\n\
+\n\
+if __name__ == "__main__":\n\
+    start_health_check()\n\
+    while True:\n\
+        time.sleep(1)\n\
 ' > health_check.py
 
 # Debug: List all files in the working directory
@@ -50,7 +65,7 @@ RUN useradd -m -u 1000 botuser && \
 USER botuser
 
 # Expose the health check port
-EXPOSE 8080
+EXPOSE 8000
 
 # Start both the health check server and the bot
-CMD ["sh", "-c", "python bot.py"] 
+CMD ["sh", "-c", "python health_check.py & python bot.py"] 
