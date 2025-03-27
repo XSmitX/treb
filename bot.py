@@ -339,7 +339,7 @@ async def broadcast(client, message):
     else:
         await message.reply_text("**⚠️ Only Admins can use this command!**")
 
-@bot.on_message(filters.command("start") & filters.private)
+@bot.on_message(filters.command("start") & filters.private & check_joined())
 async def start(client, message):
     """Handle the /start command"""
     try:
@@ -751,4 +751,3 @@ async def check_subscription(client, callback_query):
 if __name__ == "__main__":
     print("Starting TeraBox Link Processor Bot...")
     bot.run()
-
