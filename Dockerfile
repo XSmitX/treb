@@ -4,16 +4,13 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements.txt file first to leverage Docker cache for faster rebuilds
-COPY requirements.txt .
+# Copy all files from the current directory (where the Dockerfile is located) to the /app directory in the container
+COPY . .
 
-# Install Python dependencies
+# Install Python dependencies from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the bot.py file into the container
-COPY bot.py .
-
-# Expose a port (optional, if you have an HTTP server or want to run a service on a port)
+# Expose a port (optional, only needed if your app uses a network port)
 EXPOSE 8080
 
 # Create a non-root user for better security
