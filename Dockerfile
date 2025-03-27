@@ -1,17 +1,43 @@
 # Use the official Python image as the base
 FROM python:3.9-slim
 
-# Create and set the working directory in the container
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create and set the working directory
 WORKDIR /app
 
-# Copy all files from the current directory (where the Dockerfile is located) to /app in the container
-COPY . .
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies from requirements.txt
+# Copy requirements first
+COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose a port (optional, only needed if your app uses a network port)
-EXPOSE 8080
+# Copy all application files
+COPY . .
+
+# Debug: List all files in the working directory
+RUN echo "Files in /app:" && ls -la /app
+
+# Create a non-root user
+RUN useradd -m -u 1000 botuser && \
+    chown -R botuser:botuser /app
+
+# Switch to non-root user
+USER botuser
+
+# Debug: Verify bot.py exists and is readable
+RUN ls -l bot.py
 
 # Command to run the bot
-CMD ["python", "bot.py"]
+CMD ["python", "bot.py"] 
